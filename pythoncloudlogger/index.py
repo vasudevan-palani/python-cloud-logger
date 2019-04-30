@@ -34,6 +34,9 @@ class _MyAdapter(logging.LoggerAdapter):
         super().__init__(logger,extra)
         self.logger = logger
         self.handlers = logger.handlers
+        self.level = logger.level
+        self.propagate = logger.propagate
+        self.parent = logger.parent
     def hasHandlers(self,*args,**kargs):
         return self.logger.hasHandlers(*args,**kargs)
     def addHandler(self,*args,**kargs):
