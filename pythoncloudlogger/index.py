@@ -29,6 +29,41 @@ class ThreadDataManager():
 
 _origFunc = logging.getLogger
 
+class RedactingFilter(logging.Filter):
+
+    def __init__(self, patterns,keys={}):
+        super(RedactingFilter, self).__init__()
+        self._patterns = patterns
+        self._keys=keys
+
+    def filter(self, record):
+        record.msg = self.redact(record.msg)
+        if isinstance(record.args, dict):
+            for k in record.args.keys():
+                record.args[k] = self.redact(record.args[k])
+        else:
+            record.args = tuple(self.redact(arg) for arg in record.args)
+        return True
+
+    def redact(self, msg):
+
+        if isinstance(msg,dict):
+            for k in msg:
+                if isinstance(msg.get(k),dict):
+                    msg.update({
+                        k : self.redact(msg.get(k))
+                    })
+                if k.lower() in self._keys:
+                    msg.update({
+                            k:"<<TOP SECRET!>>"
+                    })
+            
+        else:
+            msg = isinstance(msg, str) and msg or str(msg)
+            for pattern in self._patterns:
+                msg = msg.replace(pattern, "<<TOP SECRET!>>")
+        return msg
+
 class _MyAdapter(logging.LoggerAdapter):
     def __init__(self,logger,extra):
         super().__init__(logger,extra)
