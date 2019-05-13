@@ -1,5 +1,7 @@
 import logging
-import os, threading
+import os, threading, copy
+
+from pythonjsonlogger import jsonlogger
 
 class ThreadDataManager():
     data = {}
@@ -29,40 +31,37 @@ class ThreadDataManager():
 
 _origFunc = logging.getLogger
 
-class RedactingFilter(logging.Filter):
 
-    def __init__(self, patterns,keys={}):
-        super(RedactingFilter, self).__init__()
-        self._patterns = patterns
-        self._keys=keys
+class RedactJsonFormatter(jsonlogger.JsonFormatter):
+    def __init__(self,*args,**kargs):
+        self.redactionKeyString = kargs.pop("redactionKeys",os.environ.get("redactionKeys",""))
+        self.redactionString = kargs.pop("redactionString",os.environ.get("redactionString","<Secret>"))
+        self.skipRedactForDebug = kargs.pop("skipRedactForDebug",os.environ.get("skipRedactForDebug","False"))
+        jsonlogger.JsonFormatter.__init__(self,*args,**kargs)
+        self.redactionKeys = self.redactionKeyString.split(",")
 
-    def filter(self, record):
-        record.msg = self.redact(record.msg)
-        if isinstance(record.args, dict):
-            for k in record.args.keys():
-                record.args[k] = self.redact(record.args[k])
-        else:
-            record.args = tuple(self.redact(arg) for arg in record.args)
-        return True
-
-    def redact(self, msg):
-
-        if isinstance(msg,dict):
-            for k in msg:
-                if isinstance(msg.get(k),dict):
+    def format(self,record):
+        message_dict = {}
+        if isinstance(record.msg, dict):
+            message_dict = copy.deepcopy(record.msg)
+            if self.skipRedactForDebug != "True":
+                message_dict = self.redact(message_dict)
+                record.msg = message_dict
+                print(message_dict)
+        return jsonlogger.JsonFormatter.format(self,record)
+    def redact(self,msg):
+        for k in msg:
+            if isinstance(msg.get(k),dict):
+                msg.update({
+                    k : self.redact(msg.get(k))
+                })
+            else:
+                if k.lower() in self.redactionKeys:
                     msg.update({
-                        k : self.redact(msg.get(k))
+                        k : self.redactionString
                     })
-                if k.lower() in self._keys:
-                    msg.update({
-                            k:"<<TOP SECRET!>>"
-                    })
-            
-        else:
-            msg = isinstance(msg, str) and msg or str(msg)
-            for pattern in self._patterns:
-                msg = msg.replace(pattern, "<<TOP SECRET!>>")
         return msg
+
 
 class _MyAdapter(logging.LoggerAdapter):
     def __init__(self,logger,extra):
@@ -76,6 +75,8 @@ class _MyAdapter(logging.LoggerAdapter):
         return self.logger.hasHandlers(*args,**kargs)
     def addHandler(self,*args,**kargs):
         return self.logger.addHandler(*args,**kargs)
+    def addFilter(self,*args,**kargs):
+        return self.logger.addFilter(*args,**kargs)
     def removeHandler(self,*args,**kargs):
         return self.logger.removeHandler(*args,**kargs)
     def removeHandler(self,*args,**kargs):
