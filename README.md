@@ -32,6 +32,8 @@ This formatter is an extension of pythonjsonlogger ( https://pypi.org/project/py
 #
 import logging,os
 
+from pythonjsonlogger.formatters import RedactJsonFormatter
+
 os.environ["redactionKeys"]="x-api-key,Authorization"
 os.environ["redactionString"]="<secret>"
 
