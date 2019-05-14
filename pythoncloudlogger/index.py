@@ -47,7 +47,6 @@ class RedactJsonFormatter(jsonlogger.JsonFormatter):
             if self.skipRedactForDebug != "True":
                 message_dict = self.redact(message_dict)
                 record.msg = message_dict
-                print(message_dict)
         return jsonlogger.JsonFormatter.format(self,record)
     def redact(self,msg):
         for k in msg:
