@@ -26,7 +26,7 @@ class RedactJsonFormatter(jsonlogger.JsonFormatter):
                     k : self.redact(msg.get(k))
                 })
             else:
-                if k.lower() in self.redactionKeys:
+                if str(k).lower() in self.redactionKeys:
                     msg.update({
                         k : self.redactionString
                     })
