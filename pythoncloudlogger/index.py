@@ -21,7 +21,7 @@ class ThreadDataManager():
         return ThreadDataManager.data.get(ident)
 
     @staticmethod
-    def clearData(data):
+    def clearData():
         ident = threading.currentThread().ident
         if (ThreadDataManager.data.get(ident) == None):
             ThreadDataManager.data[ident]={}
