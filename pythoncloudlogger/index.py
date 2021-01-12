@@ -49,7 +49,7 @@ class _MyAdapter(logging.LoggerAdapter):
         return self.logger.removeHandler(*args,**kargs)
     def updateContext(self,context):
         ThreadDataManager.setData(context)
-    def clearContext(self,context):
+    def clearContext(self,context={}):
         ThreadDataManager.clearData()
 
 def newFunc(*args,**kargs):
