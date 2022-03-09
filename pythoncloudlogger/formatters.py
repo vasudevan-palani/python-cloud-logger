@@ -9,7 +9,7 @@ class RedactJsonFormatter(jsonlogger.JsonFormatter):
         self.redactionString = kargs.pop("redactionString",os.environ.get("redactionString","<Secret>"))
         self.skipRedactForDebug = kargs.pop("skipRedactForDebug",os.environ.get("skipRedactForDebug","False"))
         jsonlogger.JsonFormatter.__init__(self,*args,**kargs)
-        self.redactionKeys = self.redactionKeyString.split(",")
+        self.redactionKeys = list(map(lambda s: s.lower(), self.redactionKeyString.split(",")))
 
     def format(self,record):
         message_dict = {}
